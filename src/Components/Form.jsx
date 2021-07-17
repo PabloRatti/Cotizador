@@ -2,11 +2,12 @@ import React from 'react';
 import styled from 'styled-components';
 import { jsPDF } from "jspdf";
 import 'jspdf-autotable'
+import logo from '../logoCanet.png';
 export default class Form extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            array1: [],
+            
             cliente: '',
             item: '',
             unidades: '',
@@ -28,10 +29,10 @@ export default class Form extends React.Component {
             aux.push({
                 nombre: 'Item' + i,
                 unidades: 100,
-                valor: 155000
+                valor: 10
             });
         }
-        this.setState({ items: [...aux] });
+        this.setState({ items: [...aux],totalPresupuesto: 5000,totalUnidades:500});
 */
     }
 
@@ -39,24 +40,24 @@ export default class Form extends React.Component {
         event.preventDefault();
         
         let itemToDeleteName = event.target.itemName.value;
-
-        console.log('In delete : ' + itemToDeleteName);
-
-
         let actualItems = [...this.state.items];
         let indiceAeliminar;
-        for (var i = 0; i < actualItems.length; i++) {
-            console.log('checking item');
-            console.log(actualItems[i].nombre);
+        let unidadesARestar = 0;
+        for (var i = 0; i < actualItems.length; i++) {          
             if (actualItems[i].nombre === itemToDeleteName) {
                 console.log('Item found!');
+                console.log(actualItems[i]);
                 indiceAeliminar = i;
+                unidadesARestar = actualItems[i].unidades;
+
             }
         }
         console.log('Deleting index : ' + indiceAeliminar);
         actualItems.splice(indiceAeliminar, 1);
-        console.log(actualItems);
-        this.setState({ items: [...actualItems] });
+      
+        let nuevaCantidadDeUnidades = parseInt(this.state.totalUnidades) - parseInt(unidadesARestar);
+          console.log('Nueva unidades : '+nuevaCantidadDeUnidades);
+        this.setState({ items: [...actualItems], totalUnidades: nuevaCantidadDeUnidades });
         
     }
 
@@ -67,8 +68,10 @@ export default class Form extends React.Component {
         var today = new Date();
         let newBody = [];
         let montoTotal = 0;
-        //var img = new Image()
-        //img.src = 'logo.jfif'
+        var img = new Image();
+        img.src = logo;
+       
+
         var date = today.getDate() + '/' + (today.getMonth() + 1) + '/' + today.getFullYear();
         doc.text(20, 20, 'Mauro Canet realizaciones : 2234-261271');
         doc.text(20, 30, 'E-mail : mcrealizaciones@gmail.com');
@@ -77,10 +80,10 @@ export default class Form extends React.Component {
         doc.text(250, 20, date);
         doc.text(250, 30, 'Mar del plata');
         doc.autoTable({ html: '#my-table' })
-        //doc.addImage(img, 'jfif', 140, 10, 60, 35)
+        doc.addImage(img, 'png', 160, 10, 60, 35)
         this.state.items.map((item) => {
 
-            let itemTabla = [item.nombre, item.unidades, item.valor];
+            let itemTabla = [item.nombre, item.unidades, '$'+item.valor];
             newBody.push(itemTabla);
             montoTotal = montoTotal + (item.unidades * item.valor);
             positionYTotal += 8;
@@ -147,6 +150,18 @@ export default class Form extends React.Component {
             }
             let totalUnidades = parseInt(this.state.totalUnidades) + parseInt(item.unidades);
             let totalPresupuesto = parseFloat(this.state.totalPresupuesto) + (parseFloat(item.valor) * parseInt(item.unidades));
+            let newItems = [...this.state.items];
+            newItems.push(item);
+
+            this.setState({
+                items : [...newItems],
+                totalPresupuesto: totalPresupuesto,
+                totalUnidades: totalUnidades,
+                item: '',
+                valor: '',
+                unidades: ''
+            })
+            /*
             this.setState((prevState) => {
                 return {
                     items: prevState.items.concat(item),
@@ -157,16 +172,24 @@ export default class Form extends React.Component {
                     unidades: ''
 
                 };
-            });
+            });*/
         }
-
-
     }
 
+    getTotalPresupuesto(){
+        let montoTotal = 0;
+        this.state.items.map((item) => {           
+            montoTotal = montoTotal + (item.unidades * item.valor);
+            return null;
+        });
+
+        return montoTotal;
+    }
     render() {
+        let totalP = this.getTotalPresupuesto();
         return (
             <MyForm>
-                <img className="img" src="logo.jfif" alt="logo" />
+                <img className="img" src={logo} alt="logo" />
                 <div className="container">
 
                     <h1 className="label">Cotizador</h1>
@@ -208,22 +231,17 @@ export default class Form extends React.Component {
                         {this.state.items.map((item) => {
                             return (
                                 
-                                    <tr >
-                                        
+                                    <tr className="row" key={item.name}>                                        
                                         <td className="itemName"><form onSubmit={this.deleteItem}> <button className="deleteButton" type="submit">{item.nombre}</button><input hidden="true" name="itemName" value={item.nombre} /></form></td>
                                         <td >{item.unidades}</td>
-                                        <td >${item.valor}</td>
-                                       
-
-                                    </tr>
-                               
+                                        <td >${item.valor}</td>                                   
+                                    </tr>                               
                             )
                         })}
-
                         <tr>
                             <td className="totales">Totales : </td>
                             <td className="totales">{this.state.totalUnidades}</td>
-                            <td className="precioTotal">${this.state.totalPresupuesto}</td>
+                            <td className="precioTotal">${totalP}</td>
                         </tr>
                     </tbody>
 
@@ -245,7 +263,9 @@ const MyForm = styled.div`
     min-width: 100%;
     max-width: 10rem;
     border-radius: 3rem;
-
+.row{
+    font-weight:bold;
+}
     .inputName{
         text-align: center;
         font-size: calc(8px + 2vmin);
@@ -264,6 +284,7 @@ const MyForm = styled.div`
        padding: 0;
        border: none;
        background: none;
+       font-weight:bold;
    }
     .img{
         width: 100%;
@@ -302,6 +323,7 @@ const MyForm = styled.div`
           text-align: center;
           padding: 8px;
           max-width: 10rem;
+          font-weight:bold;
          
       }
       .addButton{
