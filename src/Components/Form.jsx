@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { jsPDF } from "jspdf";
 import 'jspdf-autotable'
 import logo from '../logoCanet.png';
+import logoBlanco from '../logoCanetBlanco.png';
 export default class Form extends React.Component {
     constructor(props) {
         super(props);
@@ -27,7 +28,7 @@ export default class Form extends React.Component {
         let aux = [];
         for (let i = 0; i < 5; i++) {
             aux.push({
-                nombre: 'Item' + i,
+                nombre: 'Item de madera laqueada n3' + i,
                 unidades: 100,
                 valor: 10
             });
@@ -69,18 +70,18 @@ export default class Form extends React.Component {
         let newBody = [];
         let montoTotal = 0;
         var img = new Image();
-        img.src = logo;
+        img.src = logoBlanco;
        
 
         var date = today.getDate() + '/' + (today.getMonth() + 1) + '/' + today.getFullYear();
         doc.text(20, 20, 'Mauro Canet realizaciones : 2234-261271');
         doc.text(20, 30, 'E-mail : mcrealizaciones@gmail.com');
 
-        doc.text(20, 40, 'Presupuesto dirigido a : ' + this.state.cliente);
-        doc.text(250, 20, date);
-        doc.text(250, 30, 'Mar del plata');
+        doc.text(20, 40, 'Dirigido a : ' + this.state.cliente);
+        doc.text(160, 20, date);
+        doc.text(160, 30, 'Mar del plata');
         doc.autoTable({ html: '#my-table' })
-        doc.addImage(img, 'png', 160, 10, 60, 35)
+        doc.addImage(img, 'png', 220, 10, 60, 35)
         this.state.items.map((item) => {
 
             let itemTabla = [item.nombre, item.unidades, '$'+item.valor];
@@ -109,23 +110,23 @@ export default class Form extends React.Component {
 
     controlarPosicionFooter(doc, montoTotal, positionYTotal) {
         let rowsInSecondPage = this.state.items.length - 12;
-
+        let footerMsg = 'Presupuesto válido por 7 días, para la realización del trabajo es necesaria una seña del 50% del presupuesto.';
         if (this.state.items.length < 17) {
-            doc.text(20, positionYTotal, 'Total : $' + montoTotal);
-            doc.text(20, positionYTotal + 10, 'Presupuesto válido por 7 días, para la realización del trabajo es necesaria una seña del 50% del presupuesto.');
+            doc.text(15, positionYTotal, 'Total : $' + montoTotal);
+            doc.text(15, positionYTotal + 10, footerMsg);
         }
         if (this.state.items.length === 17) {
             console.log('In condition 2');
-            doc.text(20, positionYTotal - 8, 'Total : $' + montoTotal);
-            doc.text(20, positionYTotal + 2, 'Presupuesto válido por 7 días, para la realización del trabajo es necesaria una seña del 50% del presupuesto.');
+            doc.text(15, positionYTotal - 8, 'Total : $' + montoTotal);
+            doc.text(15, positionYTotal + 2, footerMsg);
 
         }
         if (this.state.items.length === 18) {
             console.log('In condition 2');
-            doc.text(20, positionYTotal - 12, 'Total : $' + montoTotal);
+            doc.text(15, positionYTotal - 12, 'Total : $' + montoTotal);
             doc.addPage();
             doc.setPage(2);
-            doc.text(20, rowsInSecondPage + 2, 'Presupuesto válido por 7 días, para la realización del trabajo es necesaria una seña del 50% del presupuesto.');
+            doc.text(15, rowsInSecondPage + 2, footerMsg);
 
         }
 
@@ -133,8 +134,8 @@ export default class Form extends React.Component {
             console.log('In condition 1');
 
             doc.setPage(2);
-            doc.text(20, rowsInSecondPage * 7, 'Total : $' + montoTotal);
-            doc.text(20, (rowsInSecondPage * 7) + 10, 'Presupuesto válido por 7 días, para la realización del trabajo es necesaria una seña del 50% del presupuesto.');
+            doc.text(15, rowsInSecondPage * 7, 'Total : $' + montoTotal);
+            doc.text(15, (rowsInSecondPage * 7) + 10, footerMsg);
 
         }
 
@@ -319,11 +320,13 @@ const MyForm = styled.div`
      
       .itemName{
           overflow: hidden;
+          color: red;
           border: 1px solid #dddddd;
           text-align: center;
           padding: 8px;
           max-width: 10rem;
           font-weight:bold;
+          
          
       }
       .addButton{
