@@ -8,13 +8,15 @@ export default class Form extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            
+
             cliente: '',
             item: '',
             unidades: '',
             valor: '',
+            subtotal: '',
             totalUnidades: 0,
-            totalPresupuesto: 0,
+            totalMateriales: 0,
+            totalManoDeObra: '',
             items: []
         }
         this.pdfGenerateor = this.pdfGenerateor.bind(this);
@@ -24,27 +26,28 @@ export default class Form extends React.Component {
     }
 
     componentDidMount() {
-       /*
-        let aux = [];
-        for (let i = 0; i < 5; i++) {
-            aux.push({
-                nombre: 'Item de madera laqueada n3' + i,
-                unidades: 100,
-                valor: 10
-            });
-        }
-        this.setState({ items: [...aux],totalPresupuesto: 5000,totalUnidades:500});
-*/
+        /*
+         let aux = [];
+         for (let i = 0; i < 5; i++) {
+             aux.push({
+                 nombre: 'Item de madera laqueada n3' + i,
+                 unidades: 100,
+                 valor: 10
+             });
+         }
+         this.setState({ items: [...aux],totalMateriales: 5000,totalUnidades:500});
+ */
     }
 
     deleteItem(event) {
-        event.preventDefault();
+      
         
-        let itemToDeleteName = event.target.itemName.value;
+     
+        let itemToDeleteName = event;
         let actualItems = [...this.state.items];
         let indiceAeliminar;
         let unidadesARestar = 0;
-        for (var i = 0; i < actualItems.length; i++) {          
+        for (var i = 0; i < actualItems.length; i++) {
             if (actualItems[i].nombre === itemToDeleteName) {
                 console.log('Item found!');
                 console.log(actualItems[i]);
@@ -55,14 +58,16 @@ export default class Form extends React.Component {
         }
         console.log('Deleting index : ' + indiceAeliminar);
         actualItems.splice(indiceAeliminar, 1);
-      
+
         let nuevaCantidadDeUnidades = parseInt(this.state.totalUnidades) - parseInt(unidadesARestar);
-          console.log('Nueva unidades : '+nuevaCantidadDeUnidades);
+        console.log('Nueva unidades : ' + nuevaCantidadDeUnidades);
         this.setState({ items: [...actualItems], totalUnidades: nuevaCantidadDeUnidades });
-        
+
     }
 
     pdfGenerateor() {
+
+        console.log(this.state);
 
         var doc = new jsPDF('landscape');
         var positionYTotal = 70;
@@ -71,7 +76,6 @@ export default class Form extends React.Component {
         let montoTotal = 0;
         var img = new Image();
         img.src = logoBlanco;
-       
 
         var date = today.getDate() + '/' + (today.getMonth() + 1) + '/' + today.getFullYear();
         doc.text(20, 20, 'Mauro Canet realizaciones : 2234-261271');
@@ -84,7 +88,7 @@ export default class Form extends React.Component {
         doc.addImage(img, 'png', 220, 10, 60, 35)
         this.state.items.map((item) => {
 
-            let itemTabla = [item.nombre, item.unidades, '$'+item.valor];
+            let itemTabla = [item.nombre, item.unidades, '$' + item.valor, '$' + item.subtotal];
             newBody.push(itemTabla);
             montoTotal = montoTotal + (item.unidades * item.valor);
             positionYTotal += 8;
@@ -97,33 +101,35 @@ export default class Form extends React.Component {
         doc.autoTable({
             headerStyles: { fontStyle: 'bold', textColor: 20, fillColor: [255, 248, 83] },
             startY: 50,
-            head: [['Item', 'Cantidad', 'Valor']],
+            head: [['Item', 'Cantidad', 'P.Unitario', 'Subtotal']],
             body: [...newBody]//[['David', 'david@example.com', 'Sweden'],['Castille', 'castille@example.com', 'Spain'],],
 
         })
 
         this.controlarPosicionFooter(doc, montoTotal, positionYTotal);
 
-
         doc.save('Presupuesto ' + this.state.cliente + '.pdf');
+
     }
 
     controlarPosicionFooter(doc, montoTotal, positionYTotal) {
         let rowsInSecondPage = this.state.items.length - 12;
         let footerMsg = 'Presupuesto válido por 7 días, para la realización del trabajo es necesaria una seña del 50% del presupuesto.';
         if (this.state.items.length < 17) {
-            doc.text(15, positionYTotal, 'Total : $' + montoTotal);
-            doc.text(15, positionYTotal + 10, footerMsg);
+            doc.text(15, positionYTotal, 'Total en materiales : $' + montoTotal);
+            doc.text(15, positionYTotal + 8, 'Mano de obra : $' + this.state.totalManoDeObra);
+            doc.text(15, positionYTotal + 16, 'Total : $' + (parseInt(montoTotal) + parseInt(this.state.totalManoDeObra)));
+            doc.text(15, positionYTotal + 24, footerMsg);
         }
         if (this.state.items.length === 17) {
             console.log('In condition 2');
-            doc.text(15, positionYTotal - 8, 'Total : $' + montoTotal);
+            doc.text(15, positionYTotal - 8, 'Total  en materiales : $' + montoTotal);
             doc.text(15, positionYTotal + 2, footerMsg);
 
         }
         if (this.state.items.length === 18) {
             console.log('In condition 2');
-            doc.text(15, positionYTotal - 12, 'Total : $' + montoTotal);
+            doc.text(15, positionYTotal - 12, 'Total  en materiales : $' + montoTotal);
             doc.addPage();
             doc.setPage(2);
             doc.text(15, rowsInSecondPage + 2, footerMsg);
@@ -139,47 +145,54 @@ export default class Form extends React.Component {
 
         }
 
-
     }
 
     agregarItem() {
-        if (this.state.item) {
-            let item = {
-                nombre: this.state.item,
-                unidades: this.state.unidades,
-                valor: this.state.valor
-            }
-            let totalUnidades = parseInt(this.state.totalUnidades) + parseInt(item.unidades);
-            let totalPresupuesto = parseFloat(this.state.totalPresupuesto) + (parseFloat(item.valor) * parseInt(item.unidades));
-            let newItems = [...this.state.items];
-            newItems.push(item);
+        try {
+            if (this.state.item) {
+                let item = {
+                    nombre: this.state.item,
+                    unidades: this.state.unidades,
+                    valor: this.state.valor,
+                    subtotal: this.state.unidades * this.state.valor
+                }
+                let totalUnidades = parseInt(this.state.totalUnidades) + parseInt(item.unidades);
+                let totalMateriales = parseFloat(this.state.totalMateriales) + (parseFloat(item.valor) * parseInt(item.unidades));
+                let newItems = [...this.state.items];
+                newItems.push(item);
 
-            this.setState({
-                items : [...newItems],
-                totalPresupuesto: totalPresupuesto,
-                totalUnidades: totalUnidades,
-                item: '',
-                valor: '',
-                unidades: ''
-            })
-            /*
-            this.setState((prevState) => {
-                return {
-                    items: prevState.items.concat(item),
-                    totalPresupuesto: totalPresupuesto,
+                this.setState({
+                    items: [...newItems],
+                    totalMateriales: totalMateriales,
                     totalUnidades: totalUnidades,
+                    totalManoDeObra: this.state.totalManoDeObra,
                     item: '',
                     valor: '',
-                    unidades: ''
-
-                };
-            });*/
+                    unidades: '',
+                    subtotal: ''
+                })
+                /*
+                this.setState((prevState) => {
+                    return {
+                        items: prevState.items.concat(item),
+                        totalMateriales: totalMateriales,
+                        totalUnidades: totalUnidades,
+                        item: '',
+                        valor: '',
+                        unidades: ''
+    
+                    };
+                });*/
+            }
+        } catch (e) {
+            console.log('Errror catched')
+            console.log(e);
         }
     }
 
-    getTotalPresupuesto(){
+    gettotalMateriales() {
         let montoTotal = 0;
-        this.state.items.map((item) => {           
+        this.state.items.map((item) => {
             montoTotal = montoTotal + (item.unidades * item.valor);
             return null;
         });
@@ -187,7 +200,7 @@ export default class Form extends React.Component {
         return montoTotal;
     }
     render() {
-        let totalP = this.getTotalPresupuesto();
+        let totalP = this.gettotalMateriales();
         return (
             <MyForm>
                 <img className="img" src={logo} alt="logo" />
@@ -209,8 +222,12 @@ export default class Form extends React.Component {
                                 <th><input type="number" value={this.state.unidades} onChange={(event) => { this.setState({ unidades: event.target.value }) }} ></input></th>
                             </tr>
                             <tr>
-                                <th>Valor : </th>
+                                <th>P.unitario : </th>
                                 <th><input type="number" value={this.state.valor} onChange={(event) => { this.setState({ valor: event.target.value }) }} ></input></th>
+                            </tr>
+                            <tr>
+                                <th>Mano de obra : </th>
+                                <th><input type="number" value={this.state.totalManoDeObra} onChange={(event) => { this.setState({ totalManoDeObra: event.target.value }) }} ></input></th>
                             </tr>
                         </tbody>
                     </table>
@@ -223,7 +240,8 @@ export default class Form extends React.Component {
                         <tr>
                             <th className="itemName">Item</th>
                             <th >Cantidad</th>
-                            <th >Valor</th>
+                            <th >P.unidad</th>
+                            <th >Subtotal</th>
                         </tr>
                     </thead>
 
@@ -231,21 +249,35 @@ export default class Form extends React.Component {
 
                         {this.state.items.map((item) => {
                             return (
-                                
-                                    <tr className="row" key={item.name}>                                        
-                                        <td className="itemName"><form onSubmit={this.deleteItem}> <button className="deleteButton" type="submit">{item.nombre}</button><input hidden="true" name="itemName" value={item.nombre} /></form></td>
-                                        <td >{item.unidades}</td>
-                                        <td >${item.valor}</td>                                   
-                                    </tr>                               
+
+                                <tr className="row" key={item.nombre}>
+                                    <td className="itemName">
+                                        {/*
+                                        <form onSubmit={this.deleteItem}>
+                                            <button className="deleteButton" type="submit">{item.nombre}
+                                            </button>
+                                            <input hidden={true} name="itemName" value={item.nombre} />
+                                        </form>*/ }
+
+                                        <button  className="deleteButton" type="submit" onClick={() => this.deleteItem(item.nombre)}>{item.nombre}
+                                        </button>
+                                             {/* <input hidden={true} name="itemName" value={item.nombre} />*/ }
+
+                                    </td>
+                                    <td >{item.unidades}</td>
+                                    <td >${item.valor}</td>
+                                    <td >${item.subtotal}</td>
+                                </tr>
                             )
                         })}
                         <tr>
                             <td className="totales">Totales : </td>
                             <td className="totales">{this.state.totalUnidades}</td>
+                            <td className="totales"></td>
                             <td className="precioTotal">${totalP}</td>
+
                         </tr>
                     </tbody>
-
 
 
                 </table>
@@ -385,9 +417,6 @@ const MyForm = styled.div`
         }
      
     `;
-
-
-
 
 
 
